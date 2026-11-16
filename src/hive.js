@@ -85,8 +85,17 @@ export function signOutFromHive() {
   sessionStorage.removeItem('cupom-hive-account')
 }
 
-function makeId() {
-  return crypto.randomUUID()
+function makeId(prefix) {
+  const alphabet = '23456789abcdefghjkmnpqrstuvwxyz'
+  let shortId = ''
+  while (shortId.length < 12) {
+    const bytes = crypto.getRandomValues(new Uint8Array(16))
+    for (const byte of bytes) {
+      if (byte < 248) shortId += alphabet[byte % alphabet.length]
+      if (shortId.length === 12) break
+    }
+  }
+  return prefix + '-' + shortId
 }
 
 function broadcastCupom(account, payload, label, customJsonId = CUPOM_CUSTOM_JSON_ID) {
@@ -97,7 +106,7 @@ function broadcastCupom(account, payload, label, customJsonId = CUPOM_CUSTOM_JSO
 }
 
 export function publishOffer(account, offer) {
-  const offerId = makeId()
+  const offerId = makeId('of')
   const payload = {
     type: 'offer.create',
     offerId,
@@ -117,7 +126,7 @@ export function publishOffer(account, offer) {
 }
 
 export function publishReply(account, offerId, body, parentId = '') {
-  const payload = { type: 'offer.comment', offerId, commentId: makeId(), parentId, body: body.trim() }
+  const payload = { type: 'offer.comment', offerId, commentId: makeId('cm'), parentId, body: body.trim() }
   return broadcastCupom(account, payload, 'Comentar em oferta do CUpom', CUPOM_COMMENTS_CUSTOM_JSON_ID).then((result) => ({ ...payload, author: account, result }))
 }
 

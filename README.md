@@ -2,6 +2,8 @@
 
 Site de ofertas e cupons da comunidade Hive, criado com Vite. Ofertas e votos são publicados como operações `custom_json` identificadas por `cupom_offers`; comentários usam `cupom_comments`. As operações são assinadas localmente pelo Hive Keychain.
 
+IDs novos são curtos e tipados: ofertas usam `of-` seguido de 12 caracteres aleatórios e comentários usam `cm-` seguido de 12 caracteres. `parentId` referencia o `commentId` pai; IDs UUID já publicados continuam válidos.
+
 ## Desenvolvimento local
 
 ```sh
