@@ -1,5 +1,5 @@
 import './style.css'
-import { getCupomOperations, parseCupomOperation, getStoredAccount, isSafeHttpUrl, publishOffer, publishReply, signInWithKeychain, signOutFromHive, voteForOffer, CUPOM_CUSTOM_JSON_ID, CUPOM_COMMENTS_CUSTOM_JSON_ID } from './hive.js'
+import { getCupomOperations, parseCupomOperation, getStoredAccount, isSafeHttpUrl, publishOffer, publishReply, signInWithKeychain, signOutFromHive, voteForOffer, CUPOM_CUSTOM_JSON_ID, CUPOM_COMMENTS_CUSTOM_JSON_ID, getOfferCustomJsonId } from './hive.js'
 
 const icon = (name, size = 18) => {
   const paths = {
@@ -168,9 +168,7 @@ function renderOffers() {
 function voteCount(offer) { return Object.values(offer.votes).filter((value) => value === 1).length }
 
 function addPendingOperation(author, payload) {
-  const customId = payload.type === 'offer.comment'
-    ? payload.offerId.length <= 32 ? payload.offerId : CUPOM_COMMENTS_CUSTOM_JSON_ID
-    : CUPOM_CUSTOM_JSON_ID
+  const customId = payload.type === 'offer.comment' ? getOfferCustomJsonId(payload.offerId) : CUPOM_CUSTOM_JSON_ID
   rawOperations.push({ custom_id: customId, id: 'local-' + Date.now() + '-' + Math.random(), timestamp: new Date().toISOString(), required_posting_auths: [author], json: JSON.stringify({ app: customId, version: 1, ...payload }) })
   rebuildOffers()
 }
@@ -266,7 +264,8 @@ async function loadOfferComments(offerId, older = false) {
   const request = (async () => {
     try {
       const cursor = older ? offerCommentCursors.get(offerId) : ''
-      const operations = await getCupomOperations({ customId: offerId, start: cursor, limit: OPERATIONS_PAGE_SIZE })
+      const customId = getOfferCustomJsonId(offerId)
+      const operations = await getCupomOperations({ customId, start: cursor, limit: OPERATIONS_PAGE_SIZE })
       const validComments = operations.filter((operation) => {
         const parsed = parseCupomOperation(operation)
         return parsed?.payload.type === 'offer.comment' && parsed.payload.offerId === offerId
@@ -302,7 +301,7 @@ function renderCurrentRoute() {
   const discussion = offers.find((entry) => entry.id === offerId)
   if (discussion) {
     renderOfferPage(discussion)
-    if (discussion.id.length <= 32 && !offerCommentFetchState.has(discussion.id)) loadOfferComments(discussion.id)
+    if (getOfferCustomJsonId(discussion.id) !== CUPOM_COMMENTS_CUSTOM_JSON_ID && !offerCommentFetchState.has(discussion.id)) loadOfferComments(discussion.id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     return
   }
@@ -345,10 +344,12 @@ function renderOfferPage(discussion, commentError = '') {
   const item = discussion.offer
   const store = findStore(item.store)
   const safeUrl = isSafeHttpUrl(item.affiliateUrl) ? escapeHTML(item.affiliateUrl) : ''
-  const offerCommentCustomId = discussion.id.length <= 32 ? discussion.id : CUPOM_COMMENTS_CUSTOM_JSON_ID
-  const commentIdNote = discussion.id.length <= 32
+  const offerCommentCustomId = getOfferCustomJsonId(discussion.id)
+  const commentIdNote = offerCommentCustomId === discussion.id
     ? 'O custom_id do comentário será o ID desta oferta: <code>' + escapeHTML(offerCommentCustomId) + '</code>.'
-    : 'Esta oferta antiga tem ID maior que o limite da Hive (32 caracteres); comentários usam <code>' + CUPOM_COMMENTS_CUSTOM_JSON_ID + '</code>.'
+    : offerCommentCustomId === CUPOM_COMMENTS_CUSTOM_JSON_ID
+      ? 'Este ID legado não pode ser reduzido com segurança; comentários usam <code>' + CUPOM_COMMENTS_CUSTOM_JSON_ID + '</code>.'
+      : 'Este ID legado excede o limite da Hive; o custom_id usa o UUID compacto: <code>' + escapeHTML(offerCommentCustomId) + '</code>.'
   const title = escapeHTML(item.title || 'Oferta da comunidade')
   const image = isSafeHttpUrl(item.image)
     ? '<img class="offer-hero-image" src="' + escapeHTML(item.image) + '" alt="Imagem da oferta: ' + title + '" referrerpolicy="no-referrer">'

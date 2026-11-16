@@ -1,6 +1,12 @@
 const HIVE_NODES = ['https://api.hive.blog', 'https://api.openhive.network']
 export const CUPOM_CUSTOM_JSON_ID = 'cupom_offers'
 export const CUPOM_COMMENTS_CUSTOM_JSON_ID = 'cupom_comments'
+export function getOfferCustomJsonId(offerId) {
+  if (typeof offerId !== 'string' || !offerId) return CUPOM_COMMENTS_CUSTOM_JSON_ID
+  if (offerId.length <= 32) return offerId
+  const compactUuid = offerId.replaceAll('-', '')
+  return compactUuid.length <= 32 ? compactUuid : CUPOM_COMMENTS_CUSTOM_JSON_ID
+}
 const HAFSQL_ENDPOINT = 'https://rpc.mahdiyari.info/hafsql/operations/custom_json/'
 const APP_VERSION = 1
 let rpcId = 1
@@ -53,8 +59,8 @@ export function parseCupomOperation(operation) {
   if (Array.isArray(value)) value = value.length > 1 ? value[1] : value[0]
   if (!value || value.version !== APP_VERSION || typeof value.type !== 'string') return null
   const isOfferOperation = operation.custom_id === CUPOM_CUSTOM_JSON_ID && value.app === CUPOM_CUSTOM_JSON_ID
-  const isLegacyCommentOperation = operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment'
-  const isOfferScopedComment = value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment' && operation.custom_id === value.offerId
+  const isLegacyCommentOperation = operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment' && typeof value.offerId === 'string'
+  const isOfferScopedComment = value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment' && typeof value.offerId === 'string' && operation.custom_id === getOfferCustomJsonId(value.offerId)
   if (!isOfferOperation && !isLegacyCommentOperation && !isOfferScopedComment) return null
   const author = (operation.required_posting_auths || operation.required_auths || [])[0]
   if (!author) return null
@@ -129,7 +135,7 @@ export function publishOffer(account, offer) {
 
 export function publishReply(account, offerId, body, parentId = '') {
   const payload = { type: 'offer.comment', offerId, commentId: makeId('cm'), parentId, body: body.trim() }
-  const customJsonId = offerId.length <= 32 ? offerId : CUPOM_COMMENTS_CUSTOM_JSON_ID
+  const customJsonId = getOfferCustomJsonId(offerId)
   return broadcastCupom(account, payload, 'Comentar em oferta do CUpom', customJsonId).then((result) => ({ ...payload, author: account, result }))
 }
 
