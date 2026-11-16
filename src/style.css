@@ -16,3 +16,89 @@
 .load-more-button{display:block;margin:18px auto 0;border:1px solid #eee2d8;border-radius:9px;background:#fff;color:#d85b20;padding:9px 15px;font-size:11px;font-weight:800;cursor:pointer}.load-more-button:hover{background:#fff4eb}.load-more-button:disabled{opacity:.55;cursor:wait}
 @media(max-width:760px){.profile-button{display:flex;width:35px;min-width:35px;padding:0;justify-content:center}.account-label{display:none}.deal-content .real-offer-image{width:83px;height:101px}.feed-status{font-size:9px}.chain-live{font-size:0}.chain-live svg{width:16px}.wide-dialog{width:min(560px,calc(100% - 20px))}}
 @media(max-width:430px){.deal-content .real-offer-image{width:70px;height:88px}.form-row{grid-template-columns:1fr;gap:0}.publish-dialog form{padding:22px}}
+
+/* Offer detail route with the discussion alongside the deal. */
+[hidden]{display:none!important}
+.deal-open-link{grid-template-columns:116px minmax(0,1fr);cursor:pointer}
+.deal-open-link:hover .deal-title-link{color:var(--orange-dark)}
+.deal-title-link{transition:color .15s}
+.deal-card-bottom{display:flex;align-items:center;justify-content:space-between;padding:0 13px 12px 142px;margin-top:-4px}
+.deal-card-bottom .deal-actions{margin:0}
+.deal-actions .comment-button{height:29px;min-width:57px;padding:0 9px;border:1px solid #eee8e3;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;gap:5px;color:#6b645e;font-size:11px}
+.deal-actions .comment-button:hover{border-color:#ffc29f;color:#e85d1e}
+.offer-page{padding-top:2px}
+.offer-page-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.offer-back{display:flex;align-items:center;gap:5px;color:#77716c;font-size:12px;font-weight:700}
+.offer-back svg{transform:rotate(180deg)}
+.offer-back:hover{color:var(--orange-dark)}
+.offer-detail-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:24px;box-shadow:0 7px 26px #3b2a1808}
+.offer-detail-card>h1{font:800 clamp(21px,2.1vw,28px)/1.25 Manrope,sans-serif;letter-spacing:-.7px;color:#292725;margin:0 0 18px}
+.offer-detail-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:26px;align-items:start}
+.offer-product{min-width:0}
+.offer-hero-media{height:245px;border:1px solid #ece8e4;border-radius:12px;overflow:hidden;background:#fff;display:grid;place-items:center}
+.offer-hero-image{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;padding:12px}
+.offer-hero-art{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:11px}
+.offer-hero-art .art-symbol{font-size:76px}
+.offer-product-meta{padding-top:12px}
+.offer-kind-pill{display:inline-flex;align-items:center;border-radius:20px;padding:5px 10px;background:#fff0e5;color:#d85b20;font-size:10px;font-weight:800}
+.offer-time{float:right;display:inline-flex;align-items:center;gap:4px;color:#938c85;font-size:11px;margin-top:4px}
+.offer-seller{display:flex;align-items:center;gap:5px;margin:13px 0 0;color:#726b65;font-size:12px;flex-wrap:wrap}
+.offer-seller .store-mark{font-size:12px}
+.seller-check{color:#35a96a;display:grid}
+.seller-by{color:#99928c;font-size:10px}
+.seller-by a{color:#df6429;font-weight:700}
+.offer-detail-price{display:flex;align-items:center;gap:11px;margin-top:17px;flex-wrap:wrap}
+.offer-detail-price strong{font:800 clamp(25px,3vw,34px)/1 Manrope,sans-serif;color:#ec5e22;letter-spacing:-1px}
+.offer-detail-price del{font-size:14px;color:#9e9791}
+.detail-coupon{margin-top:14px;padding:8px 11px;font-size:11px}
+.detail-coupon b{font-size:12px}
+.offer-detail-description{margin:14px 0;color:#716b65;font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.offer-product-actions{display:flex;align-items:center;gap:8px;margin-top:15px;flex-wrap:wrap}
+.offer-product-actions button{height:37px;border:1px solid #eae5e0;border-radius:10px;background:white;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 12px;color:#67615c;font-size:11px;font-weight:700;cursor:pointer}
+.offer-product-actions button:hover{border-color:#ffc29f;color:#dc5a20}
+.offer-product-actions .vote-button svg{color:var(--orange)}
+.offer-product-actions .share-button{color:#20a75c}
+.offer-product-actions .store-cta{height:38px;margin-left:auto;border-radius:9px;background:#fb6b24;color:white;padding:0 17px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:800}
+.offer-product-actions .store-cta:hover{background:#e65511}
+.offer-discussion{min-width:0;border-left:1px solid #f0ece8;padding-left:24px;display:flex;flex-direction:column;min-height:420px}
+.comments-heading{display:flex;align-items:center;justify-content:space-between;padding:2px 0 13px;border-bottom:1px solid #ece8e4}
+.comments-heading .eyebrow{margin-bottom:4px;font-size:9px}
+.comments-heading h2{font:800 18px Manrope,sans-serif;margin:0;color:#302c29}
+.comments-heading h2 span{font:600 13px 'DM Sans',sans-serif;color:#8e8780}
+.comments-chain{display:flex;gap:4px;align-items:center;color:#319b60;font-size:10px;font-weight:800}
+.offer-comments-list{flex:1;max-height:390px;overflow:auto;padding:8px 2px 10px 0}
+.offer-comment{display:grid;grid-template-columns:31px minmax(0,1fr);gap:9px;padding:12px 2px;border-bottom:1px solid #f0ece8}
+.comment-avatar{width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:linear-gradient(145deg,#f4bb91,#e87545);color:white;display:grid;place-items:center;font-size:11px;font-weight:800}
+.offer-comment-content{min-width:0}
+.offer-comment-content header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.offer-comment-content header a{font-size:11px;font-weight:800;color:#d85b20}
+.offer-comment-content time{font-size:9px;color:#a29b94;white-space:nowrap}
+.offer-comment-content p{margin:5px 0 0;color:#55504b;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.comments-empty{min-height:230px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:#625b55;padding:22px}
+.empty-comment-icon{width:42px;height:42px;border-radius:13px;background:#fff2e9;color:#e9692d;display:grid;place-items:center;margin-bottom:10px}
+.comments-empty b{font-size:12px}
+.comments-empty p{margin:5px 0 0;font-size:10px;color:#96908a;line-height:1.5}
+.offer-reply-form{display:grid;grid-template-columns:31px minmax(0,1fr) 34px;gap:8px;align-items:center;border-top:1px solid #ece8e4;padding-top:13px;position:relative}
+.current-comment-avatar{border:0;padding:0;cursor:default}
+.offer-reply-form textarea{display:block;width:100%;min-height:43px;max-height:110px;resize:vertical;border:1px solid #ddd8d3;border-radius:9px;padding:10px 11px;font:500 12px 'DM Sans',sans-serif;color:var(--ink);outline:none}
+.offer-reply-form textarea:focus{border-color:#f6a57a;box-shadow:0 0 0 3px #fff1e9}
+.offer-reply-form>button{height:38px;border:0;border-radius:9px;background:var(--orange);color:white;font-size:20px;cursor:pointer}
+.offer-reply-form>button:hover{background:var(--orange-dark)}
+.offer-reply-form>button:disabled{opacity:.55;cursor:wait}
+.offer-reply-form .form-error{grid-column:2/4;margin:0;font-size:10px}
+.comment-chain-note{display:block;text-align:right;color:#aaa39c;font-size:9px;margin-top:7px}
+.offer-lower-grid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;margin-top:20px;align-items:stretch}
+.offer-whatsapp-strip{display:flex;align-items:center;gap:12px;padding:15px 18px;border-radius:13px;background:#eff8f1;border:1px solid #e0f0e4}
+.offer-whatsapp-strip .whatsapp-symbol{flex:0 0 37px}
+.offer-whatsapp-strip b{font-size:13px}
+.offer-whatsapp-strip p{margin:3px 0 0;color:#8c948d;font-size:11px}
+.offer-whatsapp-strip .whatsapp-cta{margin:0 0 0 auto;padding:0 14px;white-space:nowrap}
+.offer-side-card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px}
+.offer-side-card h3{font:800 14px Manrope,sans-serif;margin:0 0 6px}
+.offer-side-card>p:not(.side-kicker){font-size:10px;line-height:1.5;color:#8c857e;margin:0 0 9px}
+.offer-side-card>a{display:flex;align-items:center;gap:4px;color:#df6429;font-size:10px;font-weight:800}
+.offer-not-found{min-height:54vh;padding:0 0 40px}
+.offer-not-found>.empty-state{margin-top:20px;padding:70px 20px}
+@media(max-width:900px){.offer-detail-card{padding:20px}.offer-detail-grid{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:18px}.offer-discussion{padding-left:18px}.offer-hero-media{height:220px}.offer-lower-grid{grid-template-columns:minmax(0,1fr) 250px}}
+@media(max-width:760px){.deal-open-link{grid-template-columns:83px minmax(0,1fr)}.deal-card-bottom{padding:0 10px 10px 103px}.offer-detail-card{padding:16px;border-radius:14px}.offer-detail-card>h1{font-size:21px;margin-bottom:14px}.offer-detail-grid{grid-template-columns:1fr;gap:21px}.offer-hero-media{height:250px}.offer-discussion{border-left:0;border-top:1px solid #f0ece8;padding:17px 0 0;min-height:0}.offer-comments-list{max-height:310px;min-height:125px}.offer-lower-grid{grid-template-columns:1fr;gap:10px}.offer-side-card{padding:15px}.offer-page-top .chain-live{font-size:10px}.offer-product-actions .store-cta{margin-left:auto}}
+@media(max-width:430px){.deal-open-link{grid-template-columns:70px minmax(0,1fr)}.deal-card-bottom{padding-left:88px}.offer-detail-card{padding:13px}.offer-detail-card>h1{font-size:19px}.offer-hero-media{height:205px}.offer-detail-price strong{font-size:28px}.offer-product-actions{gap:6px}.offer-product-actions button{height:34px;padding:0 9px}.offer-product-actions .store-cta{height:35px;padding:0 11px;font-size:10px}.offer-whatsapp-strip{gap:9px;padding:12px}.offer-whatsapp-strip b{font-size:11px}.offer-whatsapp-strip p{font-size:9px}.offer-whatsapp-strip .whatsapp-cta{font-size:0;width:37px;padding:0}.offer-whatsapp-strip .whatsapp-cta svg{width:17px}}

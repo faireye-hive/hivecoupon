@@ -33,7 +33,7 @@ let activeTab = 'Destaques'
 let activeStore = ''
 let searchTerm = ''
 let currentAccount = getStoredAccount()
-let commentsOffer = null
+let routeSearchToken = 0
 
 const escapeHTML = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
 const cleanBody = (value = '') => value.replace(/<[^>]*>/g, ' ').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[*_\x60>#]/g, '').replace(/\s+/g, ' ').trim()
@@ -48,6 +48,12 @@ const timeAgo = (value) => {
 }
 const plainPrice = (value = '') => value.replace(/[^\d,.]/g, '').replace(',', '.')
 const findStore = (name) => stores.find((store) => store.name === name)
+const offerHref = (id) => '#offer/' + encodeURIComponent(id)
+const getRouteOfferId = () => {
+  const match = location.hash.match(/^#offer\/(.+)$/) || location.hash.match(/^#offer-(.+)$/)
+  if (!match) return ''
+  try { return decodeURIComponent(match[1]) } catch { return match[1] }
+}
 
 document.querySelector('#app').innerHTML = [
   '<div class="announcement"><div class="announcement-inner"><span class="live-dot"></span><span>Ofertas publicadas diretamente na blockchain Hive.</span><a href="https://hive.io" target="_blank" rel="noopener noreferrer">Conheça a Hive ' + icon('arrow', 14) + '</a></div></div>',
@@ -56,10 +62,9 @@ document.querySelector('#app').innerHTML = [
   '<section class="stores-section" id="stores"><div class="section-title"><div><h2>Filtrar por loja</h2><p>Veja ofertas publicadas pela comunidade.</p></div><button class="refresh-button" id="refresh-button">Atualizar ' + icon('arrow', 14) + '</button></div><div class="store-grid">' + stores.map((store) => '<button class="store-chip ' + store.cls + '" data-store="' + store.name + '"><span class="store-logo">' + store.mark.split('\n').map((line) => '<span>' + line + '</span>').join('') + '</span><span class="store-caption">' + store.caption + '</span></button>').join('') + '</div></section>',
   '<section class="feed-layout"><div class="feed-column"><div class="feed-head"><div class="tabs" role="tablist" aria-label="Ordenar ofertas">' + ['Destaques', 'Recentes', 'Cupons', 'Mais baratos'].map((tab, i) => '<button role="tab" aria-selected="' + (i === 0) + '" class="feed-tab ' + (i === 0 ? 'active' : '') + '" data-tab="' + tab + '">' + tab + '</button>').join('') + '</div><span class="chain-live">' + icon('check', 13) + ' Hive</span></div><div id="feed-status" class="feed-status">Carregando operações custom_json via HAFSQL…</div><div id="deal-list" class="deal-list"></div><button id="load-more" class="load-more-button" hidden>Carregar operações anteriores</button></div>',
   '<aside class="sidebar"><section class="side-card join-card"><div class="side-icon">' + icon('user', 20) + '</div><p class="side-kicker">SUA CONTA HIVE</p><h2>Publique ofertas com sua conta.</h2><p>Entre com Hive Keychain. A extensão assina cada custom_json; o site nunca recebe sua chave.</p><button class="primary-button" id="join-button">Conectar Keychain ' + icon('arrow', 16) + '</button><div class="member-note"><span>Permissão Posting solicitada em cada ação</span></div></section><section class="side-card whatsapp-card" id="whatsapp"><div class="whatsapp-symbol">' + icon('whatsapp', 23) + '</div><div><p class="side-kicker">ESPALHE A OFERTA</p><h3>Ajude mais pessoas a economizar.</h3><p>Compartilhe o CUpom pelo WhatsApp.</p></div><button class="whatsapp-cta" id="share-site">Compartilhar site ' + icon('arrow', 15) + '</button><small>Links de afiliados podem gerar comissão.</small></section><section class="side-card tip-card"><span class="tip-icon">✦</span><div><b>Transparência</b><p>Ofertas e interações são publicadas por contas Hive em <code>' + CUPOM_CUSTOM_JSON_ID + '</code>.</p></div></section></aside></section>',
-  '<footer class="site-footer"><span>© 2026 CUpom</span><span>Ofertas armazenadas na blockchain Hive. Links de afiliados podem gerar comissão, sem custo extra.</span><a href="https://peakd.com" target="_blank" rel="noopener noreferrer">Explorar Hive ↗</a></footer></main><div class="toast" id="toast" role="status"></div>',
+  '<section id="offer-page" class="offer-page" hidden aria-live="polite"></section><footer class="site-footer"><span>© 2026 CUpom</span><span>Ofertas armazenadas na blockchain Hive. Links de afiliados podem gerar comissão, sem custo extra.</span><a href="https://peakd.com" target="_blank" rel="noopener noreferrer">Explorar Hive ↗</a></footer></main><div class="toast" id="toast" role="status"></div>',
   '<dialog id="login-dialog" class="publish-dialog"><form id="login-form"><button type="button" class="dialog-close" data-close="login-dialog" aria-label="Fechar">×</button><span class="dialog-mark">' + icon('user', 22) + '</span><p class="eyebrow">AUTENTICAÇÃO SEGURA</p><h2>Entrar com Hive Keychain</h2><p class="dialog-copy">Digite sua conta Hive. O Keychain pedirá para assinar um desafio de login com a chave Posting.</p><label>Conta Hive<input name="username" placeholder="seu-usuario" autocomplete="username" required minlength="3" maxlength="16"></label><p class="form-error" id="login-error"></p><button class="primary-button" type="submit">Conectar conta ' + icon('arrow', 16) + '</button><small class="security-note">Nunca cole sua chave privada neste site.</small></form></dialog>',
   '<dialog id="publish-dialog" class="publish-dialog wide-dialog"><form id="offer-form"><button type="button" class="dialog-close" data-close="publish-dialog" aria-label="Fechar">×</button><span class="dialog-mark">' + icon('tag', 22) + '</span><p class="eyebrow">CUSTOM_JSON · ' + CUPOM_CUSTOM_JSON_ID + '</p><h2>Compartilhar uma oferta</h2><p class="dialog-copy">A oferta será gravada como custom_json na blockchain. Revise os dados antes de confirmar no Keychain.</p><label>Título<input name="title" required maxlength="120" placeholder="Ex.: Fone Bluetooth com 40% OFF"></label><div class="form-row"><label>Loja<select name="store" required>' + stores.map((store) => '<option value="' + store.name + '">' + store.name + '</option>').join('') + '</select></label><label>Tipo<select name="kind"><option value="Oferta">Oferta</option><option value="Cupom">Cupom</option></select></label></div><div class="form-row"><label>Preço atual<input name="price" required maxlength="30" placeholder="R$ 179,90"></label><label>Preço anterior<input name="oldPrice" maxlength="30" placeholder="Opcional"></label></div><div class="form-row"><label>Código do cupom<input name="coupon" maxlength="40" placeholder="Opcional"></label><label>Imagem (URL)<input name="image" type="url" placeholder="https://… (opcional)"></label></div><label>Link da oferta / afiliado<input name="affiliateUrl" type="url" required placeholder="https://sua-loja.com/produto"></label><label>Detalhes<textarea name="description" rows="3" maxlength="600" placeholder="Explique as condições, validade ou como ativar o cupom."></textarea></label><p class="form-error" id="offer-error"></p><button class="primary-button" type="submit">Publicar na Hive ' + icon('arrow', 16) + '</button></form></dialog>',
-  '<dialog id="comments-dialog" class="publish-dialog wide-dialog"><form id="reply-form"><button type="button" class="dialog-close" data-close="comments-dialog" aria-label="Fechar">×</button><p class="eyebrow">INTERAÇÕES CUSTOM_JSON</p><h2 id="comments-title">Comentários</h2><div id="reply-list" class="reply-list"></div><label>Responder<textarea name="reply" rows="3" maxlength="1000" placeholder="Escreva uma resposta…" required></textarea></label><p class="form-error" id="reply-error"></p><button class="primary-button" type="submit">Publicar resposta ' + icon('arrow', 16) + '</button></form></dialog>',
 ].join('')
 
 function showToast(message) {
@@ -118,7 +123,7 @@ function renderOffers() {
     const voted = currentAccount && discussion.votes[currentAccount] === 1
     const oldPrice = item.oldPrice ? '<span class="old-price">' + escapeHTML(item.oldPrice) + '</span>' : ''
     const coupon = item.coupon ? '<button class="coupon-code" data-copy="' + escapeHTML(item.coupon) + '" aria-label="Copiar cupom">' + icon('tag', 15) + ' <b>' + escapeHTML(item.coupon) + '</b><span>Copiar</span></button>' : ''
-    return '<article class="deal-card" id="offer-' + escapeHTML(discussion.id) + '" data-offerid="' + escapeHTML(discussion.id) + '"><div class="deal-topline"><div class="avatar">' + author.slice(0, 1).toUpperCase() + '</div><a class="username" href="https://peakd.com/@' + author + '" target="_blank" rel="noopener noreferrer">@' + author + '</a><span class="trusted" title="Operação carregada do HAFSQL">' + icon('check', 12) + '</span><span class="time">' + icon('clock', 14) + ' ' + timeAgo(discussion.created) + '</span></div><div class="deal-content">' + image + '<div class="deal-info"><div class="deal-heading"><span class="deal-type">' + escapeHTML(item.kind || 'Oferta') + '</span><h2>' + title + '</h2></div><p class="offer-description">' + preview + '</p><div class="price-row">' + oldPrice + '<strong>' + escapeHTML(item.price || 'Consulte a loja') + '</strong><span class="sold-by">em <span class="store-mark ' + (store ? store.cls : '') + '">' + escapeHTML(item.store || 'Loja') + '</span></span></div>' + coupon + '<div class="deal-actions"><button class="vote-button ' + (voted ? 'voted' : '') + '" data-vote aria-label="' + (voted ? 'Remover voto' : 'Votar') + ' nesta oferta">' + icon('flame', 16) + ' <b>' + voteCount(discussion) + '</b></button><button class="comment-button" data-comments>' + icon('message', 16) + ' <span>' + discussion.comments.length + '</span></button><button class="share-button" data-share aria-label="Compartilhar no WhatsApp">' + icon('whatsapp', 17) + '</button></div></div><a class="deal-cta ' + (url ? '' : 'disabled-link') + '" ' + (url ? 'href="' + url + '" target="_blank" rel="sponsored nofollow noopener noreferrer"' : 'aria-disabled="true"') + '>Ver oferta ' + icon('arrow', 16) + '</a></div></article>'
+    return '<article class="deal-card" id="offer-' + escapeHTML(discussion.id) + '" data-offerid="' + escapeHTML(discussion.id) + '"><div class="deal-topline"><div class="avatar">' + author.slice(0, 1).toUpperCase() + '</div><a class="username" href="https://peakd.com/@' + author + '" target="_blank" rel="noopener noreferrer">@' + author + '</a><span class="trusted" title="Operação carregada do HAFSQL">' + icon('check', 12) + '</span><span class="time">' + icon('clock', 14) + ' ' + timeAgo(discussion.created) + '</span></div><div class="deal-content deal-open-link" data-open-offer>' + image + '<div class="deal-info"><div class="deal-heading"><span class="deal-type">' + escapeHTML(item.kind || 'Oferta') + '</span><h2><a class="deal-title-link" href="' + offerHref(discussion.id) + '">' + title + '</a></h2></div><p class="offer-description">' + preview + '</p><div class="price-row">' + oldPrice + '<strong>' + escapeHTML(item.price || 'Consulte a loja') + '</strong><span class="sold-by">em <span class="store-mark ' + (store ? store.cls : '') + '">' + escapeHTML(item.store || 'Loja') + '</span></span></div>' + coupon + '</div></div><div class="deal-card-bottom"><div class="deal-actions"><button class="vote-button ' + (voted ? 'voted' : '') + '" data-vote aria-label="' + (voted ? 'Remover voto' : 'Votar') + ' nesta oferta">' + icon('flame', 16) + ' <b>' + voteCount(discussion) + '</b></button><a class="comment-button" href="' + offerHref(discussion.id) + '" aria-label="Abrir comentários">' + icon('message', 16) + ' <span>' + discussion.comments.length + '</span></a><button class="share-button" data-share aria-label="Compartilhar no WhatsApp">' + icon('whatsapp', 17) + '</button></div><a class="deal-cta" href="' + offerHref(discussion.id) + '">Ver oferta ' + icon('arrow', 16) + '</a></div></article>'
   }).join('')
   root.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(button.dataset.copy); button.querySelector('span').textContent = 'Copiado!' }
@@ -128,7 +133,7 @@ function renderOffers() {
     const article = button.closest('.deal-card')
     const item = offers.find((entry) => entry.id === article.dataset.offerid)
     const shareUrl = new URL(location.href)
-    shareUrl.hash = 'offer-' + item.id
+    shareUrl.hash = offerHref(item.id).slice(1)
     const link = shareUrl.toString()
     window.open('https://wa.me/?text=' + encodeURIComponent(item.offer.title + ' — ' + (item.offer.price || '') + ' ' + link), '_blank', 'noopener,noreferrer')
   }))
@@ -148,10 +153,9 @@ function renderOffers() {
     catch (error) { showToast(error.message) }
     finally { button.disabled = false }
   }))
-  root.querySelectorAll('[data-comments]').forEach((button) => button.addEventListener('click', () => {
-    const article = button.closest('.deal-card')
-    commentsOffer = offers.find((entry) => entry.id === article.dataset.offerid)
-    openComments()
+  root.querySelectorAll('[data-open-offer]').forEach((surface) => surface.addEventListener('click', (event) => {
+    if (event.target.closest('button, a')) return
+    location.hash = offerHref(surface.closest('.deal-card').dataset.offerid).slice(1)
   }))
 }
 
@@ -192,10 +196,12 @@ async function loadOffers() {
     rawOperations = mergeOperations(rawOperations, chainOperations)
     rebuildOffers()
     renderOffers()
+    renderCurrentRoute()
     document.querySelector('#load-more').hidden = chainOperations.length < OPERATIONS_PAGE_SIZE
     status.textContent = offers.length + ' ofertas · operações recentes do custom_id ' + CUPOM_CUSTOM_JSON_ID
   } catch (error) {
     renderOffers()
+    renderCurrentRoute()
     status.textContent = 'Falha ao carregar HAFSQL: ' + error.message
     status.classList.add('error-status')
   }
@@ -219,6 +225,7 @@ async function loadOlderOperations() {
       operationsCursor = String(older[older.length - 1].id)
       rebuildOffers()
       renderOffers()
+      renderCurrentRoute()
     }
     button.hidden = older.length < OPERATIONS_PAGE_SIZE
   } catch (error) {
@@ -229,20 +236,105 @@ async function loadOlderOperations() {
   }
 }
 
-async function openComments() {
-  const dialog = document.querySelector('#comments-dialog')
-  document.querySelector('#comments-title').textContent = commentsOffer.offer.title
-  document.querySelector('#reply-error').textContent = ''
-  document.querySelector('#reply-form').elements.reply.value = ''
-  dialog.showModal()
-  renderComments()
+function renderCurrentRoute() {
+  const offerId = getRouteOfferId()
+  const page = document.querySelector('#offer-page')
+  const homeElements = [document.querySelector('.welcome-row'), document.querySelector('#stores'), document.querySelector('.feed-layout'), document.querySelector('.site-footer')]
+  homeElements.forEach((element) => { element.hidden = Boolean(offerId) })
+  page.hidden = !offerId
+  if (!offerId) return
+
+  const discussion = offers.find((entry) => entry.id === offerId)
+  if (discussion) {
+    renderOfferPage(discussion)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+  page.innerHTML = '<div class="offer-not-found"><a href="#top" class="offer-back">' + icon('arrow', 15) + ' Voltar às ofertas</a><div class="empty-state"><strong>Procurando esta oferta na Hive…</strong><span>Consultando o histórico de operações custom_json.</span></div></div>'
+  findOfferInHistory(offerId)
 }
 
-function renderComments() {
-  const comments = commentsOffer.comments
-  document.querySelector('#reply-list').innerHTML = comments.length
-    ? comments.map((reply) => '<article class="reply-item"><b>@' + escapeHTML(reply.author) + '</b><p>' + escapeHTML(reply.body) + '</p></article>').join('')
-    : '<p class="reply-loading">Ainda não há comentários. Comece a conversa.</p>'
+async function findOfferInHistory(offerId) {
+  const token = ++routeSearchToken
+  let cursor = operationsCursor
+  try {
+    while (cursor && token === routeSearchToken && getRouteOfferId() === offerId) {
+      const older = await getCupomOperations({ start: cursor, limit: OPERATIONS_PAGE_SIZE })
+      if (!older.length || String(older[older.length - 1].id) === cursor) break
+      rawOperations = mergeOperations(rawOperations, older)
+      cursor = String(older[older.length - 1].id)
+      operationsCursor = cursor
+      rebuildOffers()
+      if (offers.some((entry) => entry.id === offerId)) {
+        renderOffers()
+        renderCurrentRoute()
+        return
+      }
+      if (older.length < OPERATIONS_PAGE_SIZE) break
+    }
+    if (token === routeSearchToken && getRouteOfferId() === offerId) {
+      document.querySelector('#offer-page').innerHTML = '<div class="offer-not-found"><a href="#top" class="offer-back">' + icon('arrow', 15) + ' Voltar às ofertas</a><div class="empty-state"><strong>Não encontramos esta oferta</strong><span>Ela pode não estar no histórico consultado ou o link pode estar incorreto.</span></div></div>'
+    }
+  } catch (error) {
+    if (token === routeSearchToken) document.querySelector('#offer-page').innerHTML = '<div class="offer-not-found"><a href="#top" class="offer-back">' + icon('arrow', 15) + ' Voltar às ofertas</a><div class="empty-state"><strong>Não foi possível abrir a oferta</strong><span>' + escapeHTML(error.message) + '</span></div></div>'
+  }
+}
+
+function renderOfferPage(discussion) {
+  const item = discussion.offer
+  const store = findStore(item.store)
+  const safeUrl = isSafeHttpUrl(item.affiliateUrl) ? escapeHTML(item.affiliateUrl) : ''
+  const title = escapeHTML(item.title || 'Oferta da comunidade')
+  const image = isSafeHttpUrl(item.image)
+    ? '<img class="offer-hero-image" src="' + escapeHTML(item.image) + '" alt="Imagem da oferta: ' + title + '" referrerpolicy="no-referrer">'
+    : '<div class="offer-hero-art art-' + (store ? store.cls : 'coupon') + '"><span class="art-symbol">' + (item.kind === 'Cupom' ? '🏷️' : '🛍️') + '</span><span class="art-label">' + escapeHTML(item.store || 'CUpom') + '</span></div>'
+  const coupon = item.coupon ? '<button class="coupon-code detail-coupon" data-copy="' + escapeHTML(item.coupon) + '">' + icon('tag', 15) + ' <b>' + escapeHTML(item.coupon) + '</b><span>Copiar</span></button>' : ''
+  const comments = discussion.comments.length
+    ? discussion.comments.map((reply) => '<article class="offer-comment"><div class="comment-avatar">' + escapeHTML(reply.author.slice(0, 1).toUpperCase()) + '</div><div class="offer-comment-content"><header><a href="https://peakd.com/@' + escapeHTML(reply.author) + '" target="_blank" rel="noopener noreferrer">@' + escapeHTML(reply.author) + '</a><time>' + timeAgo(reply.created) + '</time></header><p>' + escapeHTML(reply.body) + '</p></div></article>').join('')
+    : '<div class="comments-empty"><span class="empty-comment-icon">' + icon('message', 19) + '</span><b>A conversa começa aqui</b><p>Compartilhe uma dúvida ou conte se encontrou a oferta.</p></div>'
+  document.querySelector('#offer-page').innerHTML = '<div class="offer-page-top"><a href="#top" class="offer-back">' + icon('arrow', 15) + ' Todas as ofertas</a><span class="chain-live">' + icon('check', 13) + ' Publicada na Hive</span></div><article class="offer-detail-card"><h1>' + title + '</h1><div class="offer-detail-grid"><section class="offer-product"><div class="offer-hero-media">' + image + '</div><div class="offer-product-meta"><div><span class="offer-kind-pill">' + escapeHTML(item.kind || 'Oferta') + '</span><span class="offer-time">' + icon('clock', 14) + ' ' + timeAgo(discussion.created) + '</span></div><p class="offer-seller">Vendido por <b class="store-mark ' + (store ? store.cls : '') + '">' + escapeHTML(item.store || 'Loja') + '</b><span class="seller-check">' + icon('check', 12) + '</span><span class="seller-by">· publicado por <a href="https://peakd.com/@' + escapeHTML(discussion.author) + '" target="_blank" rel="noopener noreferrer">@' + escapeHTML(discussion.author) + '</a></span></p><div class="offer-detail-price"><strong>' + escapeHTML(item.price || 'Consulte a loja') + '</strong>' + (item.oldPrice ? '<del>' + escapeHTML(item.oldPrice) + '</del>' : '') + '</div>' + coupon + '<p class="offer-detail-description">' + escapeHTML(item.description || 'Sem detalhes adicionais.') + '</p><div class="offer-product-actions"><button class="vote-button ' + (currentAccount && discussion.votes[currentAccount] === 1 ? 'voted' : '') + '" data-detail-vote>' + icon('flame', 16) + ' ' + voteCount(discussion) + '</button><button class="share-button" data-detail-share aria-label="Compartilhar no WhatsApp">' + icon('whatsapp', 17) + ' Compartilhar</button>' + (safeUrl ? '<a class="store-cta" href="' + safeUrl + '" target="_blank" rel="sponsored nofollow noopener noreferrer">Ir à loja ' + icon('arrow', 16) + '</a>' : '') + '</div></section><section class="offer-discussion"><div class="comments-heading"><div><p class="eyebrow">CONVERSA DA COMUNIDADE</p><h2>Comentários <span>(' + discussion.comments.length + ')</span></h2></div><span class="comments-chain">' + icon('check', 13) + ' Hive</span></div><div class="offer-comments-list">' + comments + '</div><form id="reply-form" class="offer-reply-form"><label class="comment-avatar current-comment-avatar">' + (currentAccount ? escapeHTML(currentAccount.slice(0, 1).toUpperCase()) : icon('user', 16)) + '</label><textarea name="reply" rows="2" maxlength="1000" placeholder="Participe da conversa" required></textarea><button type="submit" aria-label="Publicar comentário" title="Publicar comentário">➤</button><p class="form-error" id="reply-error"></p></form><small class="comment-chain-note">Seu comentário será publicado na blockchain Hive via Keychain.</small></section></div></article><div class="offer-lower-grid"><section class="offer-whatsapp-strip"><span class="whatsapp-symbol">' + icon('whatsapp', 23) + '</span><div><b>Compartilhe boas ofertas</b><p>Ajude mais pessoas a economizar.</p></div><button class="whatsapp-cta" data-detail-share>Compartilhar ' + icon('arrow', 15) + '</button></section><aside class="offer-side-card"><p class="side-kicker">CUPOM · ' + escapeHTML(item.store || 'LOJAS') + '</p><h3>Outras ofertas que você pode gostar</h3><p>Explore cupons e oportunidades publicados pela comunidade Hive.</p><a href="#top">Ver todas as ofertas ' + icon('arrow', 15) + '</a></aside></div>'
+
+  document.querySelector('#reply-form').addEventListener('submit', submitOfferReply)
+  document.querySelector('[data-detail-vote]').addEventListener('click', async (event) => {
+    if (!requireAccount()) return
+    const button = event.currentTarget
+    const value = discussion.votes[currentAccount] === 1 ? 0 : 1
+    button.disabled = true
+    try {
+      await voteForOffer(currentAccount, discussion.id, value)
+      addPendingOperation(currentAccount, { type: 'offer.vote', offerId: discussion.id, value })
+      await loadOffers()
+      showToast(value ? 'Voto publicado na Hive.' : 'Voto removido na Hive.')
+    } catch (error) { showToast(error.message) }
+    finally { button.disabled = false }
+  })
+  document.querySelectorAll('[data-detail-share]').forEach((button) => button.addEventListener('click', () => {
+    const url = new URL(location.href)
+    url.hash = offerHref(discussion.id).slice(1)
+    window.open('https://wa.me/?text=' + encodeURIComponent(item.title + ' — ' + (item.price || '') + ' ' + url), '_blank', 'noopener,noreferrer')
+  }))
+  document.querySelectorAll('#offer-page [data-copy]').forEach((button) => button.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(button.dataset.copy); button.querySelector('span').textContent = 'Copiado!' }
+    catch { showToast('Código do cupom: ' + button.dataset.copy) }
+  }))
+}
+
+async function submitOfferReply(event) {
+  event.preventDefault()
+  if (!requireAccount()) return
+  const form = event.currentTarget
+  const submit = form.querySelector('button[type="submit"]')
+  const error = document.querySelector('#reply-error')
+  error.textContent = ''
+  submit.disabled = true
+  try {
+    const offerId = getRouteOfferId()
+    const published = await publishReply(currentAccount, offerId, new FormData(form).get('reply'))
+    addPendingOperation(currentAccount, { type: published.type, offerId: published.offerId, commentId: published.commentId, parentId: published.parentId, body: published.body })
+    await loadOffers()
+    showToast('Comentário enviado para a Hive.')
+  } catch (replyError) { error.textContent = replyError.message }
+  finally { submit.disabled = false }
 }
 
 document.querySelectorAll('[data-store]').forEach((button) => button.addEventListener('click', () => {
@@ -260,8 +352,8 @@ document.querySelector('#search-input').addEventListener('input', (event) => { s
 document.querySelector('#refresh-button').addEventListener('click', loadOffers)
 document.querySelector('#load-more').addEventListener('click', loadOlderOperations)
 document.querySelector('#post-button').addEventListener('click', () => { if (requireAccount()) document.querySelector('#publish-dialog').showModal() })
-document.querySelector('#join-button').addEventListener('click', () => currentAccount ? (signOutFromHive(), currentAccount = '', setAccountUI(), showToast('Sessão desconectada.')) : openLogin())
-document.querySelector('#profile-button').addEventListener('click', () => currentAccount ? (signOutFromHive(), currentAccount = '', setAccountUI(), showToast('Sessão desconectada.')) : openLogin())
+document.querySelector('#join-button').addEventListener('click', () => currentAccount ? (signOutFromHive(), currentAccount = '', setAccountUI(), renderCurrentRoute(), showToast('Sessão desconectada.')) : openLogin())
+document.querySelector('#profile-button').addEventListener('click', () => currentAccount ? (signOutFromHive(), currentAccount = '', setAccountUI(), renderCurrentRoute(), showToast('Sessão desconectada.')) : openLogin())
 document.querySelector('.mobile-menu').addEventListener('click', () => document.querySelector('.main-nav').classList.toggle('menu-open'))
 document.querySelector('#share-site').addEventListener('click', () => window.open('https://wa.me/?text=' + encodeURIComponent('Encontre ofertas da comunidade no CUpom: ' + location.href), '_blank', 'noopener,noreferrer'))
 document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => document.querySelector('#' + button.dataset.close).close()))
@@ -282,6 +374,7 @@ document.querySelector('#login-form').addEventListener('submit', async (event) =
     currentAccount = await signInWithKeychain(new FormData(form).get('username'))
     setAccountUI()
     document.querySelector('#login-dialog').close()
+    renderCurrentRoute()
     showToast('Conectado como @' + currentAccount)
   } catch (loginError) { error.textContent = loginError.message }
   finally { submit.disabled = false; submit.innerHTML = 'Conectar conta ' + icon('arrow', 16) }
@@ -310,24 +403,6 @@ document.querySelector('#offer-form').addEventListener('submit', async (event) =
   finally { submit.disabled = false; submit.innerHTML = 'Publicar na Hive ' + icon('arrow', 16) }
 })
 
-document.querySelector('#reply-form').addEventListener('submit', async (event) => {
-  event.preventDefault()
-  if (!requireAccount()) return
-  const form = event.currentTarget
-  const submit = form.querySelector('button[type="submit"]')
-  const error = document.querySelector('#reply-error')
-  error.textContent = ''
-  submit.disabled = true
-  try {
-    const published = await publishReply(currentAccount, commentsOffer.id, new FormData(form).get('reply'))
-    addPendingOperation(currentAccount, { type: published.type, offerId: published.offerId, commentId: published.commentId, parentId: published.parentId, body: published.body })
-    form.elements.reply.value = ''
-    showToast('Comentário enviado para a Hive.')
-    renderComments()
-    await loadOffers()
-  } catch (replyError) { error.textContent = replyError.message }
-  finally { submit.disabled = false; submit.innerHTML = 'Publicar resposta ' + icon('arrow', 16) }
-})
-
+window.addEventListener('hashchange', renderCurrentRoute)
 setAccountUI()
 loadOffers()
