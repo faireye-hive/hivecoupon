@@ -47,13 +47,15 @@ export async function getCupomOperations({ start, limit = 1000, customId = CUPOM
 }
 
 export function parseCupomOperation(operation) {
-  if (![CUPOM_CUSTOM_JSON_ID, CUPOM_COMMENTS_CUSTOM_JSON_ID].includes(operation.custom_id)) return null
   let value
   try { value = typeof operation.json === 'string' ? JSON.parse(operation.json) : operation.json }
   catch { return null }
   if (Array.isArray(value)) value = value.length > 1 ? value[1] : value[0]
-  if (!value || ![CUPOM_CUSTOM_JSON_ID, CUPOM_COMMENTS_CUSTOM_JSON_ID].includes(value.app) || value.app !== operation.custom_id || value.version !== APP_VERSION || typeof value.type !== 'string') return null
-  if (operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type !== 'offer.comment') return null
+  if (!value || value.version !== APP_VERSION || typeof value.type !== 'string') return null
+  const isOfferOperation = operation.custom_id === CUPOM_CUSTOM_JSON_ID && value.app === CUPOM_CUSTOM_JSON_ID
+  const isLegacyCommentOperation = operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment'
+  const isOfferScopedComment = value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment' && operation.custom_id === value.offerId
+  if (!isOfferOperation && !isLegacyCommentOperation && !isOfferScopedComment) return null
   const author = (operation.required_posting_auths || operation.required_auths || [])[0]
   if (!author) return null
   return { operationId: String(operation.id), timestamp: operation.timestamp, author, payload: value }
@@ -127,7 +129,8 @@ export function publishOffer(account, offer) {
 
 export function publishReply(account, offerId, body, parentId = '') {
   const payload = { type: 'offer.comment', offerId, commentId: makeId('cm'), parentId, body: body.trim() }
-  return broadcastCupom(account, payload, 'Comentar em oferta do CUpom', CUPOM_COMMENTS_CUSTOM_JSON_ID).then((result) => ({ ...payload, author: account, result }))
+  const customJsonId = offerId.length <= 32 ? offerId : CUPOM_COMMENTS_CUSTOM_JSON_ID
+  return broadcastCupom(account, payload, 'Comentar em oferta do CUpom', customJsonId).then((result) => ({ ...payload, author: account, result }))
 }
 
 export function voteForOffer(account, offerId, value) {
