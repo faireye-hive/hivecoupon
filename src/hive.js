@@ -59,8 +59,11 @@ export function parseCupomOperation(operation) {
   if (Array.isArray(value)) value = value.length > 1 ? value[1] : value[0]
   if (!value || value.version !== APP_VERSION || typeof value.type !== 'string') return null
   const isOfferOperation = operation.custom_id === CUPOM_CUSTOM_JSON_ID && value.app === CUPOM_CUSTOM_JSON_ID
-  const isLegacyCommentOperation = operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment' && typeof value.offerId === 'string'
-  const isOfferScopedComment = value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type === 'offer.comment' && typeof value.offerId === 'string' && operation.custom_id === getOfferCustomJsonId(value.offerId)
+  const isComment = value.type === 'offer.comment' && typeof value.offerId === 'string' && value.offerId
+  const isLegacyCommentOperation = isComment && operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID
+  // Earlier clients put the offer's custom_id in app as well. Keep those comments readable.
+  const isOfferScopedComment = isComment && operation.custom_id === getOfferCustomJsonId(value.offerId) &&
+    (value.app === CUPOM_COMMENTS_CUSTOM_JSON_ID || value.app === operation.custom_id)
   if (!isOfferOperation && !isLegacyCommentOperation && !isOfferScopedComment) return null
   const author = (operation.required_posting_auths || operation.required_auths || [])[0]
   if (!author) return null
@@ -106,10 +109,19 @@ function makeId(prefix) {
   return prefix + '-' + shortId
 }
 
-function broadcastCupom(account, payload, label, customJsonId = CUPOM_CUSTOM_JSON_ID) {
-  const json = JSON.stringify({ app: customJsonId, version: APP_VERSION, ...payload })
+export function makeCupomOperation(payload) {
+  const isComment = payload.type === 'offer.comment'
+  const app = isComment ? CUPOM_COMMENTS_CUSTOM_JSON_ID : CUPOM_CUSTOM_JSON_ID
+  return {
+    custom_id: isComment ? getOfferCustomJsonId(payload.offerId) : CUPOM_CUSTOM_JSON_ID,
+    json: JSON.stringify({ ...payload, app, version: APP_VERSION }),
+  }
+}
+
+function broadcastCupom(account, payload, label) {
+  const { custom_id: customId, json } = makeCupomOperation(payload)
   return keychainRequest((keychain, callback) => {
-    keychain.requestCustomJson(account, customJsonId, 'Posting', json, label, callback)
+    keychain.requestCustomJson(account, customId, 'Posting', json, label, callback)
   })
 }
 
@@ -135,8 +147,7 @@ export function publishOffer(account, offer) {
 
 export function publishReply(account, offerId, body, parentId = '') {
   const payload = { type: 'offer.comment', offerId, commentId: makeId('cm'), parentId, body: body.trim() }
-  const customJsonId = getOfferCustomJsonId(offerId)
-  return broadcastCupom(account, payload, 'Comentar em oferta do CUpom', customJsonId).then((result) => ({ ...payload, author: account, result }))
+  return broadcastCupom(account, payload, 'Comentar em oferta do CUpom').then((result) => ({ ...payload, author: account, result }))
 }
 
 export function voteForOffer(account, offerId, value) {
