@@ -1,5 +1,6 @@
 const HIVE_NODES = ['https://api.hive.blog', 'https://api.openhive.network']
 export const CUPOM_CUSTOM_JSON_ID = 'cupom_offers'
+export const CUPOM_COMMENTS_CUSTOM_JSON_ID = 'cupom_comments'
 const HAFSQL_ENDPOINT = 'https://rpc.mahdiyari.info/hafsql/operations/custom_json/'
 const APP_VERSION = 1
 let rpcId = 1
@@ -30,10 +31,10 @@ export async function accountExists(username) {
   return Array.isArray(result) && result.length > 0
 }
 
-export async function getCupomOperations({ start, limit = 1000 } = {}) {
+export async function getCupomOperations({ start, limit = 1000, customId = CUPOM_CUSTOM_JSON_ID } = {}) {
   const query = new URLSearchParams({ limit: String(Math.min(Math.max(limit, 1), 1000)) })
   if (start) query.set('start', String(start))
-  const response = await fetch(HAFSQL_ENDPOINT + encodeURIComponent(CUPOM_CUSTOM_JSON_ID) + '?' + query, {
+  const response = await fetch(HAFSQL_ENDPOINT + encodeURIComponent(customId) + '?' + query, {
     headers: { Accept: 'application/json' },
   })
   if (!response.ok) throw new Error('HAFSQL respondeu HTTP ' + response.status)
@@ -46,12 +47,13 @@ export async function getCupomOperations({ start, limit = 1000 } = {}) {
 }
 
 export function parseCupomOperation(operation) {
-  if (operation.custom_id !== CUPOM_CUSTOM_JSON_ID) return null
+  if (![CUPOM_CUSTOM_JSON_ID, CUPOM_COMMENTS_CUSTOM_JSON_ID].includes(operation.custom_id)) return null
   let value
   try { value = typeof operation.json === 'string' ? JSON.parse(operation.json) : operation.json }
   catch { return null }
   if (Array.isArray(value)) value = value.length > 1 ? value[1] : value[0]
-  if (!value || value.app !== CUPOM_CUSTOM_JSON_ID || value.version !== APP_VERSION || typeof value.type !== 'string') return null
+  if (!value || ![CUPOM_CUSTOM_JSON_ID, CUPOM_COMMENTS_CUSTOM_JSON_ID].includes(value.app) || value.app !== operation.custom_id || value.version !== APP_VERSION || typeof value.type !== 'string') return null
+  if (operation.custom_id === CUPOM_COMMENTS_CUSTOM_JSON_ID && value.type !== 'offer.comment') return null
   const author = (operation.required_posting_auths || operation.required_auths || [])[0]
   if (!author) return null
   return { operationId: String(operation.id), timestamp: operation.timestamp, author, payload: value }
@@ -87,10 +89,10 @@ function makeId() {
   return crypto.randomUUID()
 }
 
-function broadcastCupom(account, payload, label) {
-  const json = JSON.stringify({ app: CUPOM_CUSTOM_JSON_ID, version: APP_VERSION, ...payload })
+function broadcastCupom(account, payload, label, customJsonId = CUPOM_CUSTOM_JSON_ID) {
+  const json = JSON.stringify({ app: customJsonId, version: APP_VERSION, ...payload })
   return keychainRequest((keychain, callback) => {
-    keychain.requestCustomJson(account, CUPOM_CUSTOM_JSON_ID, 'Posting', json, label, callback)
+    keychain.requestCustomJson(account, customJsonId, 'Posting', json, label, callback)
   })
 }
 
@@ -116,7 +118,7 @@ export function publishOffer(account, offer) {
 
 export function publishReply(account, offerId, body, parentId = '') {
   const payload = { type: 'offer.comment', offerId, commentId: makeId(), parentId, body: body.trim() }
-  return broadcastCupom(account, payload, 'Comentar em oferta do CUpom').then((result) => ({ ...payload, author: account, result }))
+  return broadcastCupom(account, payload, 'Comentar em oferta do CUpom', CUPOM_COMMENTS_CUSTOM_JSON_ID).then((result) => ({ ...payload, author: account, result }))
 }
 
 export function voteForOffer(account, offerId, value) {
