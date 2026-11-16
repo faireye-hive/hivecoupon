@@ -1,6 +1,6 @@
 # CUpom
 
-Site de ofertas e cupons da comunidade Hive, criado com Vite. Ofertas e interações são publicadas como operações `custom_json` identificadas por `cupom_offers`, assinadas localmente pelo Hive Keychain.
+Site de ofertas e cupons da comunidade Hive, criado com Vite. Ofertas e votos são publicados como operações `custom_json` identificadas por `cupom_offers`; comentários usam `cupom_comments`. As operações são assinadas localmente pelo Hive Keychain.
 
 ## Desenvolvimento local
 
