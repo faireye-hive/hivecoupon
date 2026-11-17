@@ -209,7 +209,7 @@ document.querySelector('#app').innerHTML = [
   </section>`,
   '<section id="offer-page" class="offer-page" hidden aria-live="polite"></section><footer class="site-footer"><span>© 2026 CUpom</span><span>Ofertas armazenadas na blockchain Hive. Links de afiliados podem gerar comissão, sem custo extra.</span><a href="https://peakd.com" target="_blank" rel="noopener noreferrer">Explorar Hive ↗</a></footer></main><div class="toast" id="toast" role="status"></div>',
   '<dialog id="login-dialog" class="publish-dialog"><form id="login-form"><button type="button" class="dialog-close" data-close="login-dialog" aria-label="Fechar">×</button><span class="dialog-mark">' + icon('user', 22) + '</span><p class="eyebrow">AUTENTICAÇÃO SEGURA</p><h2>Entrar com Hive Keychain</h2><p class="dialog-copy">Digite sua conta Hive. O Keychain pedirá para assinar um desafio de login com a chave Posting.</p><label>Conta Hive<input name="username" placeholder="seu-usuario" autocomplete="username" required minlength="3" maxlength="16"></label><p class="form-error" id="login-error"></p><button class="primary-button" type="submit">Conectar conta ' + icon('arrow', 16) + '</button><small class="security-note">Nunca cole sua chave privada neste site.</small></form></dialog>',
-  '<dialog id="publish-dialog" class="publish-dialog wide-dialog"><form id="offer-form"><button type="button" class="dialog-close" data-close="publish-dialog" aria-label="Fechar">×</button><span class="dialog-mark">' + icon('tag', 22) + '</span><p class="eyebrow">CUSTOM_JSON · ' + CUPOM_CUSTOM_JSON_ID + '</p><h2>Compartilhar uma oferta</h2><p class="dialog-copy">A oferta será gravada como custom_json na blockchain. Revise os dados antes de confirmar no Keychain.</p><label>Título<input name="title" required maxlength="120" placeholder="Ex.: Fone Bluetooth com 40% OFF"></label><div class="form-row"><label>Loja<select name="store" required>' + stores.map((store) => '<option value="' + store.name + '">' + store.name + '</option>').join('') + '</select></label><label>Tipo<select name="kind"><option value="Oferta">Oferta</option><option value="Cupom">Cupom</option></select></label></div><div class="form-row"><label>Categoria<select name="category">' + categories.map((category) => '<option value="' + category.name + '">' + category.name + '</option>').join('') + '</select></label><label>Tags<input name="tags" maxlength="100" placeholder="Ex.: Ação, Aventura, Mundo aberto"></label></div><div class="form-row"><label>Preço atual (R$)<input name="price" required maxlength="30" placeholder="179,90"></label><label>Preço anterior (R$)<input name="oldPrice" maxlength="30" placeholder="Opcional"></label></div><div class="form-row"><label>Código do cupom<input name="coupon" maxlength="40" placeholder="Opcional"></label><label>Imagem (URL)<input name="image" type="url" placeholder="https://… (opcional)"></label></div><label>Link da oferta / afiliado<input name="affiliateUrl" type="url" required placeholder="https://sua-loja.com/produto"></label><label>Detalhes<textarea name="description" rows="3" maxlength="600" placeholder="Explique as condições, validade ou como ativar o cupom."></textarea></label><p class="form-error" id="offer-error"></p><button class="primary-button" type="submit">Publicar na Hive ' + icon('arrow', 16) + '</button></form></dialog>',
+  '<dialog id="publish-dialog" class="publish-dialog wide-dialog"><form id="offer-form"><button type="button" class="dialog-close" data-close="publish-dialog" aria-label="Fechar">×</button><span class="dialog-mark">' + icon('tag', 22) + '</span><p class="eyebrow">CUSTOM_JSON · ' + CUPOM_CUSTOM_JSON_ID + '</p><h2>Compartilhar uma oferta</h2><p class="dialog-copy">A oferta será gravada como custom_json na blockchain. Revise os dados antes de confirmar no Keychain.</p><label>Título<input name="title" required maxlength="120" placeholder="Ex.: Fone Bluetooth com 40% OFF"></label><div class="form-row"><label>Loja<select name="store" required>' + stores.map((store) => '<option value="' + store.name + '">' + store.name + '</option>').join('') + '<option value="__other__">Outro</option></select></label><label>Tipo<select name="kind"><option value="Oferta">Oferta</option><option value="Cupom">Cupom</option></select></label></div><label id="custom-store-field" hidden>Nome da loja<input name="customStore" maxlength="80" pattern=".*\\S.*" placeholder="Digite o nome da loja" disabled></label><div class="form-row"><label>Categoria<select name="category">' + categories.map((category) => '<option value="' + category.name + '">' + category.name + '</option>').join('') + '</select></label><label>Tags<input name="tags" maxlength="100" placeholder="Ex.: Ação, Aventura, Mundo aberto"></label></div><div class="form-row"><label>Preço atual (R$)<input name="price" required maxlength="30" placeholder="179,90"></label><label>Preço anterior (R$)<input name="oldPrice" maxlength="30" placeholder="Opcional"></label></div><div class="form-row"><label>Código do cupom<input name="coupon" maxlength="40" placeholder="Opcional"></label><label>Imagem (URL)<input name="image" type="url" placeholder="https://… (opcional)"></label></div><label>Link da oferta / afiliado<input name="affiliateUrl" type="url" required placeholder="https://sua-loja.com/produto"></label><label>Detalhes<textarea name="description" rows="3" maxlength="600" placeholder="Explique as condições, validade ou como ativar o cupom."></textarea></label><p class="form-error" id="offer-error"></p><button class="primary-button" type="submit">Publicar na Hive ' + icon('arrow', 16) + '</button></form></dialog>',
 ].join('')
 
 function showToast(message) {
@@ -310,7 +310,6 @@ function renderOffers() {
     return `<article class="deal-card" id="offer-${escapeHTML(discussion.id)}" data-offerid="${escapeHTML(discussion.id)}">
       <div class="deal-content">
         ${renderOfferMedia(item)}
-        <button type="button" class="save-button card-save ${saved ? 'is-saved' : ''}" data-save aria-pressed="${saved}" aria-label="${saved ? 'Remover dos favoritos' : 'Salvar oferta'}">${icon('heart', 21)}</button>
         <div class="deal-info">
           <span class="deal-category">${escapeHTML(category)}</span>
           <h3>${title}</h3>
@@ -337,7 +336,7 @@ function renderOffers() {
           <button type="button" class="vote-button ${voted ? 'voted' : ''}" data-vote aria-pressed="${Boolean(voted)}" aria-label="${voted ? 'Remover voto' : 'Votar'} nesta oferta">${icon('flame', 17)} <b>${voteCount(discussion)}</b></button>
           <a class="comment-button" href="${href}" aria-label="Abrir comentários da oferta">${icon('message', 16)} <span>${discussion.comments.length}</span></a>
           <button type="button" class="share-button" data-share aria-label="Compartilhar no WhatsApp">${icon('whatsapp', 17)}</button>
-          
+          <button type="button" class="save-button ${saved ? 'is-saved' : ''}" data-save aria-pressed="${saved}" aria-label="${saved ? 'Remover dos favoritos' : 'Salvar oferta'}" title="${saved ? 'Remover dos favoritos' : 'Salvar oferta'}">${icon('bookmark', 17)}</button>
         </div>
       </div>
     </article>`
@@ -818,7 +817,19 @@ document.querySelector('#login-form').addEventListener('submit', async (event) =
   finally { submit.disabled = false; submit.innerHTML = 'Conectar conta ' + icon('arrow', 16) }
 })
 
-document.querySelector('#offer-form').addEventListener('submit', async (event) => {
+const offerForm = document.querySelector('#offer-form')
+function syncCustomStoreField() {
+  const isOther = offerForm.elements.store.value === '__other__'
+  document.querySelector('#custom-store-field').hidden = !isOther
+  offerForm.elements.customStore.disabled = !isOther
+  offerForm.elements.customStore.required = isOther
+}
+offerForm.elements.store.addEventListener('change', () => {
+  syncCustomStoreField()
+  if (!offerForm.elements.customStore.disabled) offerForm.elements.customStore.focus()
+})
+
+offerForm.addEventListener('submit', async (event) => {
   event.preventDefault()
   if (!requireAccount()) return
   const form = event.currentTarget
@@ -827,7 +838,10 @@ document.querySelector('#offer-form').addEventListener('submit', async (event) =
   error.textContent = ''
   const data = Object.fromEntries(new FormData(form).entries())
   if (!isSafeHttpUrl(data.affiliateUrl) || (data.image && !isSafeHttpUrl(data.image))) { error.textContent = 'Use links começando com http:// ou https://.'; return }
-  data.storeTag = findStore(data.store).tag
+  data.store = data.store === '__other__' ? String(data.customStore || '').trim() : data.store
+  if (!data.store) { error.textContent = 'Digite o nome da loja.'; form.elements.customStore.focus(); return }
+  delete data.customStore
+  data.storeTag = findStore(data.store)?.tag || ''
   data.category = categories.some(({ name }) => name === data.category) ? data.category : 'Outros'
   data.tags = String(data.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 5)
   submit.disabled = true
@@ -837,6 +851,7 @@ document.querySelector('#offer-form').addEventListener('submit', async (event) =
     addPendingOperation(currentAccount, { type: published.type, offerId: published.offerId, offer: published.offer })
     document.querySelector('#publish-dialog').close()
     form.reset()
+    syncCustomStoreField()
     showToast('custom_json enviado para a Hive.')
     await loadOffers()
   } catch (publishError) { error.textContent = publishError.message }
