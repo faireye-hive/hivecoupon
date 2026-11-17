@@ -9,6 +9,7 @@ const icon = (name, size = 18) => {
     plus: '<path d="M12 5v14M5 12h14"/>',
     grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     list: '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
     bookmark: '<path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-4-6 4V4.8Z"/>',
     zap: '<path d="m13 2-3 8h7l-6 12 1-9H5l8-11Z"/>',
     game: '<path d="M6 9h12a4 4 0 0 1 3.8 5l-1 3a2 2 0 0 1-3.2 1l-2.2-2H8.6l-2.2 2a2 2 0 0 1-3.2-1l-1-3A4 4 0 0 1 6 9Z"/><path d="M7 12v4m-2-2h4m7-1h.01M18 15h.01"/>',
@@ -64,7 +65,7 @@ let activeTab = 'Destaques'
 let searchTerm = ''
 let activeCategory = 'Todas'
 let activeStore = 'Todas as lojas'
-let displayMode = 'list'
+let displayMode = 'grid'
 let savedOffers = new Set()
 try { savedOffers = new Set(JSON.parse(localStorage.getItem('cupom:saved-offers') || '[]')) } catch { /* Ignore malformed browser storage. */ }
 let currentAccount = getStoredAccount()
@@ -141,9 +142,10 @@ document.querySelector('#app').innerHTML = [
         <span class="brand-icon">${icon('tag', 23)}</span><span>CUpom<span class="brand-dot">.</span></span>
       </a>
       <nav class="main-nav" id="main-nav" aria-label="Navegação principal">
-        <a class="nav-link nav-link-active" href="#deal-list">${icon('tag', 16)} Ofertas</a>
+        <a class="nav-link nav-link-active" href="#top">Início</a>
+        <a class="nav-link" href="#deal-list">Ofertas</a>
         <a class="nav-link" href="#deal-list" data-quick-filter="Cupons">${icon('tag', 16)} Cupons</a>
-        <button class="nav-link nav-action" type="button" data-focus-store>${icon('store', 16)} Lojas</button>
+        <button class="nav-link nav-action" type="button" data-quick-filter="Favoritos" aria-pressed="false">Favoritos</button>
         <a class="nav-link" href="#deal-categories">${icon('grid', 16)} Categorias</a>
       </nav>
       <label class="search-box">${icon('search', 19)}
@@ -155,39 +157,48 @@ document.querySelector('#app').innerHTML = [
     </div>
   </header>`,
   `<main id="top" class="page-shell">
-    <section class="welcome-row">
+    <section class="welcome-row" aria-labelledby="welcome-title">
       <div class="welcome-content">
-        <h1>Achou, <em>economizou.</em></h1>
-        <p class="welcome-copy">Ofertas e cupons compartilhados pela comunidade na Hive.</p>
-        <div class="hero-actions"><a class="hero-cta" href="#deal-list">${icon('search', 17)} Explorar ofertas</a><button class="hero-store-cta" type="button" data-focus-store>${icon('store', 17)} Ver lojas</button></div>
+        <p class="eyebrow">AS MELHORES OFERTAS DA COMUNIDADE</p>
+        <h1 id="welcome-title">Promoções reais<br>em um só lugar</h1>
+        <p class="welcome-copy">Descubra ofertas, encontre cupons e economize nas suas compras.</p>
+        <div class="hero-actions"><a class="hero-cta" href="#deal-list">Ver ofertas ${icon('arrowRight', 22)}</a></div>
       </div>
       <div class="hero-art" aria-hidden="true">
-        <div class="hero-orbit orbit-outer"></div><div class="hero-orbit orbit-inner"></div>
-        <span class="hero-spark spark-top">✦</span><span class="hero-spark spark-bottom">✧</span>
-        <div class="hero-ticket hero-ticket-back"></div>
-        <div class="hero-ticket hero-ticket-front"><span class="ticket-percent">%</span><span class="ticket-stub">${icon('tag', 25)}</span></div>
+        <svg class="shopping-illustration" viewBox="0 0 600 360" fill="none">
+          <path d="M54 231C88 172 131 179 174 102C222 18 332 10 391 89C442 157 541 129 570 216C600 304 537 333 458 333H119C36 333 12 294 54 231Z" fill="#FEE2E2"/>
+          <path d="M108 229L190 202H264L224 229Z" fill="#FFF7F7"/>
+          <rect x="108" y="229" width="119" height="104" rx="8" fill="#FFF"/>
+          <path d="M227 229L264 202V309L227 333Z" fill="#FECACA"/>
+          <path d="M153 229L206 202H230L178 229V260H153Z" fill="#EF4444"/>
+          <path d="M294 111H449Q462 111 465 125L505 314Q509 333 490 333H300Z" fill="#B91C1C"/>
+          <path d="M267 111H432Q445 111 447 126L463 314Q465 333 446 333H246Q226 333 230 313L252 127Q254 111 267 111Z" fill="#EF4444"/>
+          <path d="M303 132C305 72 325 42 354 42C386 42 407 73 407 132" stroke="#111827" stroke-width="12" stroke-linecap="round"/>
+          <path d="M403 139L429 151L447 218Q449 226 441 230L382 258Q373 262 369 253L344 198Q341 191 346 186L389 145Z" fill="white"/>
+          <circle cx="402" cy="160" r="6" fill="#B91C1C"/>
+          <path d="M402 139V160" stroke="#DC2626" stroke-width="4" stroke-linecap="round"/>
+          <g stroke="#EF4444" stroke-width="6" stroke-linecap="round">
+            <path d="M378 225L414 186"/>
+            <circle cx="378" cy="195" r="9"/><circle cx="414" cy="218" r="9"/>
+            <path d="M498 97L509 67M522 116L548 96M532 140L561 135"/>
+          </g>
+        </svg>
       </div>
-      <div class="hero-benefits">
-        <div><span class="benefit-icon">${icon('zap', 19)}</span><p><b>Ofertas reais</b><small>Economize de verdade</small></p></div>
-        <div><span class="benefit-icon">${icon('user', 19)}</span><p><b>Comunidade ativa</b><small>Ofertas compartilhadas</small></p></div>
-        <div><span class="benefit-icon">${icon('check', 19)}</span><p><b>Seguro e confiável</b><small>Compartilhado na Hive</small></p></div>
-      </div>
+    </section>
+    <section class="category-strip" id="deal-categories" aria-label="Categorias de ofertas">
+      ${categories.map((category) => `<button type="button" class="category-tile" data-category="${category.name}" aria-pressed="false"><span class="category-tile-icon">${icon(category.icon, 32)}</span><span>${category.name}</span></button>`).join('')}
     </section>`,
   `<section class="feed-layout" id="deal-list">
     <div class="feed-column">
-      <div class="feed-heading"><h2>${icon('tag', 22)} Explore as ofertas</h2><button type="button" class="refresh-button" id="refresh-button">${icon('refresh', 17)} Atualizar</button></div>
+      <div class="feed-heading"><h2>Ofertas em destaque</h2><button type="button" class="refresh-button" id="refresh-button">${icon('refresh', 17)} Atualizar</button></div>
       <div class="feed-head"><div class="tabs" role="tablist" aria-label="Ordenar ofertas">
         ${['Destaques', 'Recentes', 'Cupons', 'Mais baratos', 'Em alta'].map((tab, i) => `<button type="button" role="tab" aria-selected="${i === 0}" class="feed-tab ${i === 0 ? 'active' : ''}" data-tab="${tab}">${tab === 'Destaques' ? icon('flame', 15) : tab === 'Recentes' ? icon('clock', 15) : tab === 'Cupons' ? icon('tag', 15) : tab === 'Mais baratos' ? '↓' : icon('trend', 15)} ${tab}</button>`).join('')}
-      </div><div class="feed-tools"><label class="store-filter-wrap">${icon('store', 15)}<select id="store-filter" aria-label="Filtrar por loja"><option>Todas as lojas</option>${stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><div class="view-toggle" role="group" aria-label="Modo de visualização"><button type="button" data-view="list" aria-pressed="true" aria-label="Visualização em lista">${icon('list', 17)}</button><button type="button" data-view="grid" aria-pressed="false" aria-label="Visualização em grade">${icon('grid', 17)}</button></div></div></div>
+      </div><div class="feed-tools"><label class="store-filter-wrap">${icon('store', 15)}<select id="store-filter" aria-label="Filtrar por loja"><option>Todas as lojas</option>${stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><div class="view-toggle" role="group" aria-label="Modo de visualização"><button type="button" data-view="list" aria-pressed="false" aria-label="Visualização em lista">${icon('list', 17)}</button><button type="button" data-view="grid" aria-pressed="true" aria-label="Visualização em grade">${icon('grid', 17)}</button></div></div></div>
       <div id="feed-status" class="feed-status" role="status">Buscando ofertas na Hive…</div>
-      <div id="offer-list" class="deal-list"></div>
+      <div id="offer-list" class="deal-list grid-view"></div>
       <button type="button" id="load-more" class="load-more-button" hidden>Carregar mais ofertas</button>
     </div>
-    <aside class="sidebar" aria-label="Categorias e cupons">
-      <section class="side-card category-card" id="deal-categories">
-        <h2>${icon('grid', 19)} Categorias</h2>
-        <div class="category-list">${categories.map((category) => `<button type="button" class="category-link" data-category="${category.name}"><span>${icon(category.icon, 17)} ${category.name}</span><span class="category-count" data-category-count="${category.name}">0</span></button>`).join('')}</div>
-      </section>
+    <aside class="sidebar" aria-label="Cupons e comunidade">
       <section class="side-card coupon-promo-card">
         <div class="coupon-promo-art">${icon('tag', 47)}<b>%</b></div><div><h2>Cupons exclusivos</h2><p>Ative cupons e economize em suas compras.</p><button type="button" class="coupon-promo-button" data-quick-filter="Cupons">Ver cupons ${icon('arrowRight', 16)}</button></div>
       </section>
@@ -255,6 +266,9 @@ function renderOffers() {
   document.querySelectorAll('[data-category-count]').forEach((node) => {
     node.textContent = String(offers.filter(({ offer }) => offerCategory(offer) === node.dataset.categoryCount).length)
   })
+  document.querySelector('.feed-heading h2').textContent = activeTab === 'Favoritos' ? 'Suas ofertas favoritas' : activeTab === 'Destaques' ? 'Ofertas em destaque' : activeTab
+  document.querySelector('[data-quick-filter="Favoritos"]').setAttribute('aria-pressed', String(activeTab === 'Favoritos'))
+  if (activeTab === 'Favoritos') list = list.filter(({ id }) => savedOffers.has(id))
   if (activeTab === 'Cupons') list = list.filter(({ offer }) => offer.kind === 'Cupom' || offer.coupon)
   if (activeStore !== 'Todas as lojas') list = list.filter(({ offer }) => offer.store === activeStore)
   if (activeCategory !== 'Todas') list = list.filter(({ offer }) => offerCategory(offer) === activeCategory)
@@ -274,6 +288,9 @@ function renderOffers() {
     root.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search', 24) + '</div><strong>' + empty + '</strong><span>' + detail + '</span><button class="clear-filter">' + (offers.length ? 'Limpar filtros' : 'Publicar a primeira oferta') + '</button></div>'
     root.querySelector('.clear-filter').addEventListener('click', () => {
       if (!offers.length) { if (requireAccount()) document.querySelector('#publish-dialog').showModal(); return }
+      activeTab = 'Destaques'
+      document.querySelectorAll('[data-tab]').forEach((tab) => { const selected = tab.dataset.tab === activeTab; tab.classList.toggle('active', selected); tab.setAttribute('aria-selected', String(selected)) })
+      document.querySelectorAll('[data-category]').forEach((button) => button.setAttribute('aria-pressed', 'false'))
       searchTerm = ''; activeCategory = 'Todas'; activeStore = 'Todas as lojas'; document.querySelector('#search-input').value = ''; document.querySelector('#store-filter').value = activeStore; document.querySelectorAll('[data-category]').forEach((button) => button.classList.remove('is-active')); renderOffers()
     })
     return
@@ -293,6 +310,7 @@ function renderOffers() {
     return `<article class="deal-card" id="offer-${escapeHTML(discussion.id)}" data-offerid="${escapeHTML(discussion.id)}">
       <div class="deal-content">
         ${renderOfferMedia(item)}
+        <button type="button" class="save-button card-save ${saved ? 'is-saved' : ''}" data-save aria-pressed="${saved}" aria-label="${saved ? 'Remover dos favoritos' : 'Salvar oferta'}">${icon('heart', 21)}</button>
         <div class="deal-info">
           <span class="deal-category">${escapeHTML(category)}</span>
           <h3>${title}</h3>
@@ -319,7 +337,7 @@ function renderOffers() {
           <button type="button" class="vote-button ${voted ? 'voted' : ''}" data-vote aria-pressed="${Boolean(voted)}" aria-label="${voted ? 'Remover voto' : 'Votar'} nesta oferta">${icon('flame', 17)} <b>${voteCount(discussion)}</b></button>
           <a class="comment-button" href="${href}" aria-label="Abrir comentários da oferta">${icon('message', 16)} <span>${discussion.comments.length}</span></a>
           <button type="button" class="share-button" data-share aria-label="Compartilhar no WhatsApp">${icon('whatsapp', 17)}</button>
-          <button type="button" class="save-button ${saved ? 'is-saved' : ''}" data-save aria-pressed="${saved}" aria-label="${saved ? 'Remover dos salvos' : 'Salvar oferta'}">${icon('bookmark', 16)}</button>
+          
         </div>
       </div>
     </article>`
@@ -495,7 +513,7 @@ async function loadOfferComments(offerId, older = false) {
 function renderCurrentRoute() {
   const offerId = getRouteOfferId()
   const page = document.querySelector('#offer-page')
-  const homeElements = [document.querySelector('.welcome-row'), document.querySelector('.feed-layout'), document.querySelector('.site-footer')]
+  const homeElements = [document.querySelector('.welcome-row'), document.querySelector('.category-strip'), document.querySelector('.feed-layout'), document.querySelector('.site-footer')]
   homeElements.forEach((element) => { element.hidden = Boolean(offerId) })
   page.hidden = !offerId
   if (!offerId) return
@@ -729,7 +747,8 @@ document.querySelectorAll('[data-tab]').forEach((button) => button.addEventListe
 }))
 document.querySelectorAll('[data-category]').forEach((button) => button.addEventListener('click', () => {
   activeCategory = activeCategory === button.dataset.category ? 'Todas' : button.dataset.category
-  document.querySelectorAll('[data-category]').forEach((item) => item.classList.toggle('is-active', item.dataset.category === activeCategory))
+  document.querySelectorAll('[data-category]').forEach((item) => { const selected = item.dataset.category === activeCategory; item.classList.toggle('is-active', selected); item.setAttribute('aria-pressed', String(selected)) })
+  if (location.hash !== '#deal-list') location.hash = 'deal-list'
   renderOffers()
 }))
 document.querySelector('#store-filter').addEventListener('change', (event) => {
@@ -741,8 +760,9 @@ document.querySelectorAll('[data-view]').forEach((button) => button.addEventList
   document.querySelectorAll('[data-view]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)))
   document.querySelector('#offer-list').classList.toggle('grid-view', displayMode === 'grid')
 }))
-document.querySelectorAll('[data-quick-filter="Cupons"]').forEach((button) => button.addEventListener('click', () => {
-  activeTab = 'Cupons'
+document.querySelectorAll('[data-quick-filter]').forEach((button) => button.addEventListener('click', () => {
+  activeTab = button.dataset.quickFilter
+  if (mainNav.classList.contains('menu-open')) mobileMenu.click()
   document.querySelectorAll('[data-tab]').forEach((tab) => { const selected = tab.dataset.tab === activeTab; tab.classList.toggle('active', selected); tab.setAttribute('aria-selected', String(selected)) })
   if (location.hash !== '#deal-list') location.hash = 'deal-list'
   renderOffers()
